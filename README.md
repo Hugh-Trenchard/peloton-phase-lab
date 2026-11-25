@@ -5,7 +5,7 @@ An agent-based browser model of peloton phases. Each rider tries to draft, stay 
 - **Author:** Hugh Trenchard, independent researcher, Victoria, BC
 - **Version:** 1.0 (November 2026)
 - **Licence:** GNU General Public License, version 3 or later (see `LICENSE`)
-- **Run it in your browser:** https://hugh-trenchard.github.io/peloton-phase-lab/
+- **Run it in your browser:** https://hughtrenchard.ca/peloton-phase-lab/
 
 ## How to run
 
