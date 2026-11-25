@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Peloton Phase Transitions: changing dynamics through speed</title>
+<style>
+/* An explorable in the style of Complexity Explorables: one interactive, one control (speed), short text. */
+:root{--ink:#1f2b2f;--muted:#5d6d71;--line:#dfe5e3;--accent:#0f8b7d;--bg:#fff;--panel:#f5f7f6}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.6 Georgia,"Iowan Old Style","Times New Roman",serif;overflow-x:clip}
+.wrap{max-width:880px;margin:0 auto;padding:22px 16px 40px}
+header .kicker{font:600 12px/1.2 system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+h1{font:700 40px/1.05 system-ui,-apple-system,"Segoe UI",sans-serif;margin:6px 0 4px;letter-spacing:-.01em}
+.subtitle{font:400 20px/1.3 system-ui,sans-serif;color:var(--muted);margin:0 0 18px}
+h2{font:700 23px/1.2 system-ui,sans-serif;margin:34px 0 8px}
+h3{font:700 18px/1.25 system-ui,sans-serif;margin:22px 0 4px}
+p{margin:0 0 14px}
+a{color:var(--accent)}
+.widget{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;margin:8px 0 22px;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+.road{position:relative;height:330px;border-radius:9px;overflow:hidden;background:#3a4144}
+.road canvas{position:absolute;inset:0;width:100%;height:100%}
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;margin:12px 2px 6px}
+button{font:600 15px system-ui,sans-serif;min-height:40px;padding:8px 14px;border-radius:8px;border:1px solid #c9d3d0;background:#fff;color:var(--ink);cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff;min-width:84px}
+button.on{background:#e3f3f0;border-color:var(--accent);color:#0a5f56}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.speed{flex:1 1 260px;display:flex;align-items:center;gap:10px;font-size:15px}
+.speed b{min-width:74px;text-align:right;font-variant-numeric:tabular-nums}
+input[type=range]{flex:1;accent-color:var(--accent);height:30px}
+.readout{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:10px;margin-top:8px}
+.card{background:#fff;border:1px solid var(--line);border-radius:9px;padding:9px 12px}
+.card .k{font-size:12px;color:var(--muted)}
+.card .v{font-size:20px;font-weight:700;line-height:1.25;display:flex;align-items:center;gap:8px}
+.card .v i{width:13px;height:13px;border-radius:3px;flex:none}
+.card .d{font-size:13.5px;color:var(--muted)}
+.meter{position:relative;height:9px;border-radius:5px;background:linear-gradient(90deg,#9fd3a8 0 40.7%,#f1d27a 40.7% 61.5%,#eda06c 61.5% 83.3%,#d86b6b 83.3%);margin:8px 0 3px}
+.meter i{position:absolute;top:-4px;width:4px;height:17px;border-radius:2px;background:var(--ink);transform:translateX(-2px);transition:left .4s}
+.ticks{display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
+.plots{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;margin-top:10px}
+.plotbox{background:#fff;border:1px solid var(--line);border-radius:9px;padding:9px 12px}
+.plotbox .k{font-size:12px;color:var(--muted);margin-bottom:4px}
+#braid{width:100%;height:250px;display:block}
+#plane{width:100%;height:280px;display:block}
+.mapbox{margin-top:10px;background:#fff;border:1px solid var(--line);border-radius:9px;padding:9px 12px}
+.mapbox .k{font-size:12px;color:var(--muted);margin-bottom:4px}
+#map{width:100%;height:118px;display:block}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12.5px;color:var(--muted);margin-top:6px}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.legend i{width:11px;height:11px;border-radius:2px;display:inline-block}
+.note{font-size:12.5px;color:var(--muted);margin:6px 2px 0}
+.math{background:var(--panel);border-left:3px solid var(--accent);padding:10px 14px;border-radius:0 8px 8px 0;margin:10px 0 16px;font-size:16px}
+.eq{font:italic 19px/1.4 Georgia,serif;text-align:center;margin:8px 0}
+.eq .frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 4px}
+.eq .frac span:first-child{border-bottom:1px solid var(--ink);padding:0 4px}
+footer{margin-top:34px;padding-top:12px;border-top:1px solid var(--line);font:13px/1.5 system-ui,sans-serif;color:var(--muted)}
+@media(max-width:640px){h1{font-size:31px}.road{height:250px}.readout,.plots{grid-template-columns:1fr}body{font-size:16.5px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="kicker">Explorable</div>
+  <h1>Peloton Phase Transitions</h1>
+  <p class="subtitle">Changing dynamics through speed</p>
+</header>
+
+<p>A pack of cyclists, a peloton, is a striking example of collective motion, easily observed in races like the Tour de France. Although team directors can instruct riders where to be in the pack, collective formations are largely determined by physics and riders' physiological limitations. Underlying formations are these basic rules: each rider seeks to save energy by riding behind others, to stay with the group, and to move up when they can. As the peloton moves through changing speeds, distinct <em>phases</em> can be observed. Press <b>Play</b> and watch the speed rise and fall and the collective dynamics that emerge.</p>
+
+<div class="widget">
+  <div class="road" id="roadBox"><canvas id="road" aria-label="Overhead view of the riders moving left to right, each with a thin trace of its path over the last few seconds"></canvas></div>
+  <div class="bar">
+    <button class="primary" id="play">Play</button>
+    <button id="reset">Reset</button>
+    <label class="speed">Speed <input id="speed" type="range" min="25" max="50" step="0.5" value="30" aria-label="Speed in kilometres per hour"><b id="speedOut">30.0 km/h</b></label>
+    <button id="sweep" class="on" aria-pressed="true">Gradual speed change: on</button>
+  </div>
+  <div class="bar">
+    <label class="speed">Riders <input id="riders" type="range" min="10" max="50" step="1" value="25" aria-label="Number of riders"><b id="ridersOut">25</b></label>
+    <button id="tracers" aria-pressed="false">Tracers: off</button>
+  </div>
+  <div class="readout">
+    <div class="card"><div class="k">What the pack is doing</div><div class="v"><i id="phaseSwatch" style="background:#c9cfd1"></i><span id="phase">Press Play</span></div><div class="d" id="phaseText">The phase is measured once a second, after a few seconds' warm-up.</div></div>
+    <div class="card"><div class="k">Effort: PCR for the pack</div><div class="v" id="pcr">–</div>
+      <div class="meter"><i id="pcrMark" style="left:0"></i></div><div class="ticks"><span>0</span><span>0.49</span><span>0.74</span><span>1</span><span>1.2</span></div></div>
+  </div>
+  <div class="plots">
+    <div class="plotbox"><div class="k">The braid: each rider's place in the order over the last 10 minutes (top = front), with the phase beneath</div>
+      <canvas id="braid" aria-label="Each rider's position in the order over the last 10 minutes, drawn as crossing strands, with a ribbon coloured by phase"></canvas></div>
+    <div class="plotbox"><div class="k">Effort versus mixing: PCR and Cx* each second over the last 10 minutes, coloured by phase</div>
+      <canvas id="plane" aria-label="Trail of PCR against Cx*, one dot per second coloured by phase, with the phase thresholds as dashed lines"></canvas></div>
+  </div>
+  <div class="mapbox">
+    <div class="k">Phase at each speed, recorded on the way up and on the way down</div>
+    <canvas id="map" aria-label="Two strips coloured by phase against speed: one for speeding up, one for slowing down"></canvas>
+    <div class="legend" id="legend"></div>
+  </div>
+  <p class="note">25 cyclists to start (the Riders slider sets 10 to 50; changing it starts a new race) on a flat 15 m wide road; time runs at three times real speed. With gradual speed change on, speed climbs slowly from 30 to 46 km/h, holds, eases back, and then stays at 30 km/h for five minutes so that split groups can rejoin. When the pack splits, the view zooms out to show every group, with each group's size and average PCR above it, while groups of 7 riders or fewer may be truncated from view. Moving the Speed slider yourself switches gradual speed change off.</p>
+</div>
+
+<h2>How it works</h2>
+<h3>Drafting</h3>
+<p>At racing speeds most of a cyclist's energy is spent pushing air aside. Drafting, or riding close behind other riders, saves a large share of it. With the Tracers button switched on, each rider in the animation trails a thin line showing its path over the last few seconds, seen from a viewpoint that moves at the pace of the pack. Riders holding a drafting position leave short traces; riders moving up the sides leave long traces behind them, and riders drifting back or losing contact leave traces that point forwards.</p>
+<h3>Limited energy</h3>
+<p>Every rider has a <em>maximal sustainable output</em> (MSO), the most power it can keep up. The riders here have MSOs derived from riders in a real women's elite provincial-level Scratch race on a velodrome, ranging from 215 to 337 watts (W). Some are stronger than others; the range for the current riders is shown in the corner of the animation. Riders are coloured by how hard they are working: green means they can still pass others (PCR below 0.74), amber means they must draft to maintain speed and cannot pass (PCR 0.74 to 1), and red means they cannot hold a wheel even when drafting (PCR above 1). Riders can go a little over their limit for a short while, then must recover.</p>
+<h3>Moving up</h3>
+<p>Riders with spare energy drift up the sides of the bunch and tuck back in further ahead; riders at the front take a turn in the wind, and then swing off or are passed by fresher riders. But passing means riding in the wind, faster than the bunch, and that costs energy riders may not have.</p>
+
+<h2>Observe this</h2>
+<p>Three graphs under the animation follow the pack. The <b>braid</b> draws each rider's place in the order as a coloured strand: every crossing is an overtake, so a mixing bunch weaves a dense braid and a single-file line is shown as parallel lines. The <b>effort-versus-mixing</b> graph plots PCR against Cx* once a second; the dashed lines are the thresholds that separate the phases, and the trail loops as the speed rises and falls. The <b>phase strips</b> record which phase appeared at each speed on the way up and on the way down.</p>
+<p><b>Compact and static, or compact and mixing.</b> At 30 km/h everyone has energy to spare. The bunch is compact, and riders hold position or swap places freely.</p>
+<p><b>Surging.</b> As the speed rises, effort goes up and the reshuffling continues: the bunch is accelerating and reorganising.</p>
+<p><b>Strung out.</b> Above about 41 km/h the weaker riders are close to their limits. They can follow a wheel but no longer pass, so the bunch narrows into a long single-file line.</p>
+<p><b>Breaking apart.</b> Push the speeds above about 45 km/h and even full drafting is not enough for the weakest riders: gaps open, and the bunch splits into groups.</p>
+<p><b>Strung out and tired.</b> Watch the speed come back down. At speeds where the bunch was surging on the way up, it now stays strung out: riders have used up their reserves and cannot move up. The two strips in the phase chart differ. The state of the bunch depends on its history as well as its speed: <em>hysteresis</em>.</p>
+
+<h2>The math</h2>
+<p>The phases are identified with two numbers, measured once a second.</p>
+<div class="math">
+  <p><b>Effort.</b> The <em>peloton convergence ratio</em> compares the power a sheltered rider needs with what it can sustain:</p>
+  <div class="eq">PCR = <span class="frac"><span>P<sub>front</sub> d</span><span>MSO</span></span></div>
+  <p>P<sub>front</sub> is the power the front rider needs at the current speed, and d (0.62 here) is the fraction of it a sheltered rider still needs. The value shown is the average over riders. Below about 0.49 riders have plenty to spare; above about 0.74 they can follow but not pass; above 1 they cannot hold a wheel even when drafting.</p>
+  <p><b>Mixing.</b> Track each rider's place in the order as a strand in time, and every overtake becomes a crossing of two strands, as in a braid. Let X be the number of riders whose position changed in the last second, among N riders. Then the <em>positional complexity</em> is</p>
+  <div class="eq">Cx* = 1 + ln(1 + 12X / N)</div>
+  <p>The phase rules combine the two: low mixing with high PCR is strung out; high mixing with low PCR is compact and mixing; PCR above 1 is breaking apart; and whether PCR is rising or falling separates surging from easing off, and strung out from strung out and tiring.</p>
+</div>
+
+<h2>Further information</h2>
+<p>H. Trenchard, D. R. Recchia and M. Perc, <a href="https://sportrxiv.org/index.php/server/preprint/view/1164/version/1439">Braid complexity and peloton phase dynamics</a>, SportRxiv preprint (2026).</p>
+<p>The model behind this explorable, with all its settings and experiments: the <a href="https://hughtrenchard.ca/peloton-phase-lab/">Peloton Phase Lab</a> (source code and documentation on <a href="https://github.com/Hugh-Trenchard/peloton-phase-lab">GitHub</a>). It is based on the author's NetLogo model of peloton dynamics and developed with the assistance of Claude Opus 5.5.</p>
+
+<footer>Based on the Peloton Phase Lab by Hugh Trenchard. Code licensed under the GNU GPL v3. The JavaScript implementation was written with the assistance of Claude (Anthropic).</footer>
+</div>
+
+<script src="model.js"></script>
+<script>
+{
+const $ = id => document.getElementById(id);
+const DT = 0.05, BIKE = 1.8, ROAD = 15, RATE = 3;
+let N = 25, tracersOn = false;      // RATE: simulated seconds per real second
+const V_LO = 30, V_HI = 46, RAMP = 0.12, HOLD_HI = 20, HOLD_LO = 300;   // sweep: km/h, km/h, km/h per s, hold at top (s), recovery at the bottom (s)
+const MAP_LO = 25, MAP_HI = 50, BIN = 0.5;
+const PH = {
+  Cs: ['Compact and static', 'Riders hold their places at low effort.', '#9ccf8f'],
+  Ccl: ['Compact and convective (low)', 'Riders keep moving up, generating collective rotations, at low effort.', '#3f9a5a'],
+  Cch: ['Compact and convective (high)', 'Riders keep moving up, generating collective rotations, at higher effort.', '#2f6f6a'],
+  Da: ['Surging', 'Someone attacks and the bunch reshuffles.', '#4a7fc1'],
+  Dd: ['Easing off', 'The pace falls and the bunch reshuffles.', '#8f74c4'],
+  S: ['Strung out', 'Close to their limits, riders line up single file. Few can pass others.', '#e3a33b'],
+  Sf: ['Strung out and tiring', 'The pace is easing, but the line holds: riders are too tired to move up.', '#c0692a'],
+  Dcp: ['Breaking apart', 'Too fast to hold a wheel: gaps open and the bunch splits.', '#c23b3b'],
+  Transitional: ['In between', 'Between the named phases.', '#c9cfd1']
+};
+let sim, seed = 1, playing = false, acc = 0, last = performance.now();
+let sweepOn = true, sweepDir = 1, hold = 0, lastDir = 1, prevV = V_LO, speedNow = V_LO;
+let log = [], done = 0, map, frameX = 0, nStep = 0;
+const TRAIL_DT = 0.1, TRAIL_N = 50;   // tracer: a point every 0.1 s, kept for 5 s
+const view = {};
+
+function newMap() { const n = Math.round((MAP_HI - MAP_LO) / BIN); map = { up: new Array(n).fill(null), down: new Array(n).fill(null) }; }
+function cond() {
+  return { speedKmh: speedNow, grade: 0, d0: 0.62, draft: 'netlogo', reserve: true, lull: true, urge: 1.2,
+    width: ROAD, epsFloor: 0, rejoin: 'auto', sRule: 'line', pcrBasis: 'scheduled' };
+}
+function reset() {
+  seed = (Math.random() * 1e9) >>> 0;
+  $('speed').value = V_LO; speedNow = V_LO; prevV = V_LO; sweepDir = 1; hold = 8; lastDir = 1;
+  sim = new Peloton({ n: N, msoMode: 'pool', seed, speedKmh: V_LO, width: ROAD });
+  sim.nextSample = 1; view.k = 0; view.y = undefined; frameX = 0; nStep = 0; log = []; done = 0; newMap();
+  $('phase').textContent = playing ? 'Settling in…' : 'Press Play'; $('phaseSwatch').style.background = PH.Transitional[2];
+  $('phaseText').textContent = 'The phase is measured once a second, after a few seconds\' warm-up.';
+  $('pcr').textContent = '–'; $('pcrMark').style.left = '0';
+  labels(); drawMap(); drawBraid(); drawPlane();
+}
+function labels() { $('speedOut').textContent = speedNow.toFixed(1) + ' km/h'; }
+function setSweep(on) { sweepOn = on; $('sweep').classList.toggle('on', on); $('sweep').setAttribute('aria-pressed', on); $('sweep').textContent = 'Gradual speed change: ' + (on ? 'on' : 'off'); }
+
+function stepSweep() {
+  let v = speedNow;
+  if (hold > 0) { hold -= DT; return; }
+  v += sweepDir * RAMP * DT;
+  if (v >= V_HI) { v = V_HI; sweepDir = -1; hold = HOLD_HI; }
+  if (v <= V_LO) { v = V_LO; sweepDir = 1; hold = HOLD_LO; }
+  speedNow = v; $('speed').value = Math.round(v * 2) / 2; labels();
+}
+
+const COL = ['#3aa76d', '#e0b43a', '#d9683d'];
+// Rider colour from the rider's own PCR at the current pace (the paper's Eq. 4, as in the PCR readout):
+// green below 0.738 (can still pass), amber 0.738 to 1 (must draft, cannot pass), red above 1 (cannot hold a wheel).
+let pFrontNow = 0;
+// A group's average PCR at the current pace (the same calculation as the pack readout, over the group's riders).
+const groupPCR = gr => gr.members.reduce((t, a) => t + Peloton.pcr(pFrontNow, 0.62, a.mso), 0) / gr.members.length;
+const colourOf = a => { const p = Peloton.pcr(pFrontNow, 0.62, a.mso); return p < Peloton.REF.pcrHigh ? COL[0] : p <= 1 ? COL[1] : COL[2]; };
+
+// Overhead road cyclist, drawn to scale (metres) facing +x: wheels and tyres, frame, drop bars, saddle,
+// legs mid pedal stroke, shorts, a tapered jersey back in the effort colour, arms to the brake hoods, and a
+// vented helmet. Proportions follow typical road-bike and rider dimensions (wheelbase about 1.0 m, bars 0.42 m).
+function drawRider(g, x, y, k, jersey, id, t) {
+  if (k < 6) {                                         // far zoom: a simple marker that stays visible
+    g.fillStyle = jersey; g.beginPath(); g.ellipse(x, y, Math.max(3, 0.9 * k), Math.max(2, 0.3 * k), 0, 0, 7); g.fill();
+    g.fillStyle = '#f1efe9'; g.beginPath(); g.arc(x + Math.max(2, 0.3 * k), y, Math.max(1.2, 0.12 * k), 0, 7); g.fill();
+    return;
+  }
+  g.save(); g.translate(x, y); g.scale(k, k);
+  const px1 = 1 / k;                                   // one screen pixel, in metres
+  const lw = w => Math.max(w, px1);
+  g.lineCap = 'round'; g.lineJoin = 'round';
+  // Wheels (tyres seen edge-on) and frame.
+  g.strokeStyle = '#15191b';
+  g.lineWidth = lw(0.03);
+  g.beginPath(); g.moveTo(-0.84, 0); g.lineTo(-0.18, 0); g.moveTo(0.18, 0); g.lineTo(0.84, 0); g.stroke();
+  g.strokeStyle = '#2b3134'; g.lineWidth = lw(0.035);
+  g.beginPath(); g.moveTo(-0.42, 0); g.lineTo(0.47, 0); g.stroke();
+  // Drop handlebar with hoods.
+  g.strokeStyle = '#15191b'; g.lineWidth = lw(0.026);
+  g.beginPath(); g.moveTo(0.50, -0.21); g.quadraticCurveTo(0.56, 0, 0.50, 0.21); g.stroke();
+  g.lineWidth = lw(0.03);
+  g.beginPath(); g.moveTo(0.50, -0.21); g.lineTo(0.58, -0.21); g.moveTo(0.50, 0.21); g.lineTo(0.58, 0.21); g.stroke();
+  // Legs: thighs from the hips to the knees, which sit just outside the top tube; one leg forward, one back.
+  const ph = (t * 1.5 + id * 0.37) % 1, s1 = Math.sin(ph * 2 * Math.PI);
+  const knee = (side, off) => [0.02 + 0.09 * off, side * 0.12];
+  g.strokeStyle = '#1b1f21'; g.lineWidth = lw(0.12);
+  for (const [side, off] of [[1, s1], [-1, -s1]]) {
+    const [kx, ky] = knee(side, off);
+    g.beginPath(); g.moveTo(-0.2, side * 0.08); g.lineTo(kx, ky); g.stroke();
+    g.strokeStyle = '#d8b294'; g.lineWidth = lw(0.085);           // shin and calf, foreshortened
+    g.beginPath(); g.moveTo(kx, ky); g.lineTo(kx - 0.06, ky * 0.9); g.stroke();
+    g.strokeStyle = '#1b1f21'; g.lineWidth = lw(0.12);
+  }
+  // Saddle and shorts.
+  g.fillStyle = '#111416';
+  g.beginPath(); g.ellipse(-0.26, 0, 0.13, 0.07, 0, 0, 7); g.fill();
+  g.fillStyle = '#1b1f21';
+  g.beginPath(); g.ellipse(-0.24, 0, 0.13, 0.16, 0, 0, 7); g.fill();
+  // Arms: upper arm (sleeve) from the shoulder, forearm (skin) to the hoods.
+  for (const side of [1, -1]) {
+    g.strokeStyle = '#d8b294'; g.lineWidth = lw(0.07);
+    g.beginPath(); g.moveTo(0.27, side * 0.19); g.lineTo(0.55, side * 0.205); g.stroke();
+    g.strokeStyle = jersey; g.lineWidth = lw(0.095);
+    g.beginPath(); g.moveTo(0.12, side * 0.19); g.lineTo(0.3, side * 0.195); g.stroke();
+    g.fillStyle = '#15191b'; g.beginPath(); g.ellipse(0.565, side * 0.205, 0.035, 0.03, 0, 0, 7); g.fill();   // gloves
+  }
+  // Back: tapered from the hips to the shoulders, in the jersey (effort) colour, with a darker spine line.
+  g.fillStyle = jersey;
+  g.beginPath();
+  g.moveTo(-0.22, -0.14);
+  g.bezierCurveTo(-0.05, -0.17, 0.08, -0.23, 0.18, -0.2);
+  g.quadraticCurveTo(0.26, -0.12, 0.26, 0);
+  g.quadraticCurveTo(0.26, 0.12, 0.18, 0.2);
+  g.bezierCurveTo(0.08, 0.23, -0.05, 0.17, -0.22, 0.14);
+  g.quadraticCurveTo(-0.27, 0, -0.22, -0.14);
+  g.fill();
+  g.strokeStyle = 'rgba(0,0,0,.22)'; g.lineWidth = lw(0.02);
+  g.beginPath(); g.moveTo(-0.2, 0); g.lineTo(0.2, 0); g.stroke();
+  // Helmet: rounded teardrop, pointed at the back, with vents.
+  g.fillStyle = '#f1efe9';
+  g.beginPath();
+  g.moveTo(0.43, 0);
+  g.bezierCurveTo(0.43, 0.09, 0.33, 0.115, 0.27, 0.1);
+  g.quadraticCurveTo(0.2, 0.07, 0.17, 0);
+  g.quadraticCurveTo(0.2, -0.07, 0.27, -0.1);
+  g.bezierCurveTo(0.33, -0.115, 0.43, -0.09, 0.43, 0);
+  g.fill();
+  if (k > 14) {
+    g.strokeStyle = 'rgba(0,0,0,.35)'; g.lineWidth = lw(0.012);
+    g.beginPath();
+    for (const v of [-0.05, 0, 0.05]) { g.moveTo(0.23, v * 0.9); g.lineTo(0.37, v); }
+    g.stroke();
+  }
+  g.restore();
+}
+function sizeCanvas(c) {
+  const r = c.getBoundingClientRect(), s = devicePixelRatio || 1;
+  if (c.width !== Math.round(r.width * s) || c.height !== Math.round(r.height * s)) { c.width = Math.round(r.width * s); c.height = Math.round(r.height * s); }
+  const g = c.getContext('2d'); g.setTransform(s, 0, 0, s, 0, 0); return [g, r.width, r.height];
+}
+
+function drawRoad() {
+  pFrontNow = Peloton.roadPower(speedNow / 3.6, 0);
+  const [g, W, H] = sizeCanvas($('road'));
+  const alpha = playing ? Math.min(1, acc / DT) : 1;
+  const px = a => (a.px ?? a.x) + (a.x - (a.px ?? a.x)) * alpha, py = a => (a.py ?? a.y) + (a.y - (a.py ?? a.y)) * alpha;
+  // Camera: one group -> fit the group; split -> zoom out to show every group (as far as 1 px per m).
+  const split = sim.groups && sim.groups.length > 1;
+  // When split, frame every group of more than 7 riders; smaller groups (stragglers) may fall outside the view.
+  const big = split ? sim.groups.filter((gr, i) => i === 0 || gr.members.length > 7).flatMap(gr => gr.members) : null;
+  const frame = split ? big : (sim.groups && sim.groups[0] ? sim.groups[0].members : sim.riders);
+  const xs = frame.map(px), head = Math.max(...xs), tail = Math.min(...xs), ys = frame.map(py), top = Math.max(...ys), bot = Math.min(...ys);
+  const kT = Math.max(1, Math.min(28, (H - 30) / Math.max(8, top - bot + 4), (W - 40) / Math.max(22, head - tail + 14)));
+  view.k = view.k ? view.k + (kT - view.k) * 0.04 : kT;
+  view.y = view.y === undefined ? (top + bot) / 2 : view.y + ((top + bot) / 2 - view.y) * 0.04;
+  // The view centre is kept relative to the front rider, so the camera never lags behind the moving pack.
+  const off = (head + tail) / 2 - head;
+  view.off = view.off === undefined ? off : view.off + (off - view.off) * 0.06;
+  const k = view.k;
+  // Zoomed far out, the road's width is stretched on screen (up to filling the view) so groups stay readable.
+  const ky = Math.max(k, 0.75 * (H - 60) / ROAD), half = (H / 2) / ky;
+  const yc = Math.max(-ROAD / 2 + half - 0.6, Math.min(ROAD / 2 - half + 0.6, view.y));
+  const cx = W * 0.5 - (head + view.off) * k, cy = H / 2 + (half * 2 >= ROAD ? 0 : yc * ky);
+  const X = x => cx + x * k, Y = y => cy - y * ky;
+  g.fillStyle = '#3a4144'; g.fillRect(0, 0, W, H);
+  g.fillStyle = '#454d50'; g.fillRect(0, Y(ROAD / 2), W, ROAD * ky);
+  g.strokeStyle = 'rgba(255,255,255,.75)'; g.lineWidth = 2;
+  g.beginPath(); g.moveTo(0, Y(ROAD / 2)); g.lineTo(W, Y(ROAD / 2)); g.moveTo(0, Y(-ROAD / 2)); g.lineTo(W, Y(-ROAD / 2)); g.stroke();
+  // Tracers: each rider's path over the last 5 s, seen from a viewpoint moving at the set pace, so a rider
+  // moving up leaves a trace behind it and a rider drifting back leaves one ahead of it. Older parts fade.
+  g.lineWidth = 1; g.lineCap = 'round';
+  if (tracersOn) for (const a of sim.riders) {
+    const tr = a.trail; if (!tr || tr.length < 4) continue;
+    const m = tr.length / 2;
+    for (let i = 1; i < m; i++) {
+      g.strokeStyle = `rgba(235,240,238,${0.08 + 0.5 * i / m})`;
+      g.beginPath(); g.moveTo(X(frameX + tr[2 * i - 2]), Y(tr[2 * i - 1])); g.lineTo(X(frameX + tr[2 * i]), Y(tr[2 * i + 1])); g.stroke();
+    }
+  }
+  for (const a of sim.riders) {
+    const x = X(px(a)), y = Y(py(a)); if (x < -40 || x > W + 40) continue;
+    drawRider(g, x, y, k, colourOf(a), a.id ?? 0, sim.t);
+  }
+  g.font = '600 13px system-ui'; g.fillStyle = 'rgba(255,255,255,.9)'; g.textAlign = 'right';
+  g.fillText(speedNow.toFixed(1) + ' km/h', W - 10, 20);
+  { const ms = sim.riders.map(r => r.mso), lo = Math.min(...ms), hi = Math.max(...ms), mean = ms.reduce((t, v) => t + v, 0) / ms.length;
+    g.font = '11px system-ui'; g.fillStyle = 'rgba(255,255,255,.7)'; g.textAlign = 'left';
+    g.fillText(`Rider MSOs: ${Math.round(lo)}–${Math.round(hi)} W (mean ${Math.round(mean)} W)`, 10, H - 10); g.textAlign = 'right'; }
+  if (ky > 1.5 * k) { g.font = '11px system-ui'; g.fillStyle = 'rgba(255,255,255,.6)'; g.fillText(`zoomed out: road width not to scale · ${Math.round(W / k)} m shown`, W - 10, H - 10); }
+  if (split) {
+    g.font = '600 12px system-ui'; g.textAlign = 'center'; g.fillStyle = 'rgba(255,255,255,.9)';
+    let lastLx = Infinity;
+    sim.groups.forEach((gr, i) => { const lx = X((gr.headX + gr.tailX) / 2); if (lx < 30 || lx > W - 30 || lastLx - lx < 64) return;
+      const top = Math.max(30, Y(ROAD / 2) - 22);
+      g.fillText(i === 0 ? `front: ${gr.members.length}` : `${gr.members.length} rider${gr.members.length > 1 ? 's' : ''}`, lx, top);
+      g.font = '11px system-ui'; g.fillStyle = 'rgba(255,255,255,.75)'; g.fillText(`PCR ${groupPCR(gr).toFixed(2)}`, lx, top + 14);
+      g.font = '600 12px system-ui'; g.fillStyle = 'rgba(255,255,255,.9)'; lastLx = lx; });
+    g.textAlign = 'left'; g.font = '12px system-ui';
+    const off = sim.groups.slice(1).filter(gr => X(gr.headX) < 10);
+    // Groups out of view are listed at the bottom left, above the MSO line.
+    const lines = off.slice(0, 3).map(gr => `◀ group of ${gr.members.length} (PCR ${groupPCR(gr).toFixed(2)}), ${Math.round(sim.groups[0].tailX - gr.headX)} m back`);
+    if (off.length > 3) lines.push(`◀ and ${off.length - 3} more group${off.length > 4 ? 's' : ''} further back`);
+    g.font = '11.5px system-ui'; g.fillStyle = 'rgba(255,255,255,.85)';
+    lines.forEach((t, i) => g.fillText(t, 10, H - 26 - 15 * (lines.length - 1 - i)));
+  }
+  if (!playing) { g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(0, 0, W, H); g.fillStyle = '#fff'; g.textAlign = 'center'; g.font = '600 16px system-ui'; g.fillText('Paused · press Play', W / 2, H / 2); }
+}
+
+function drawMap() {
+  const [g, W, H] = sizeCanvas($('map'));
+  const L = 118, R = 8, rowH = 30, y1 = 6, y2 = y1 + rowH + 8, axisY = y2 + rowH + 6;
+  const X = v => L + (v - MAP_LO) / (MAP_HI - MAP_LO) * (W - L - R);
+  g.clearRect(0, 0, W, H);
+  g.font = '12.5px system-ui'; g.fillStyle = '#5d6d71'; g.textAlign = 'left'; g.textBaseline = 'middle';
+  g.fillText('Speeding up →', 0, y1 + rowH / 2); g.fillText('← Slowing down', 0, y2 + rowH / 2);
+  [['up', y1], ['down', y2]].forEach(([dir, y]) => {
+    g.fillStyle = '#eef1f0'; g.fillRect(L, y, W - L - R, rowH);
+    map[dir].forEach((ph, i) => { if (!ph) return; const v = MAP_LO + i * BIN; g.fillStyle = PH[ph][2]; g.fillRect(X(v), y, Math.ceil(X(v + BIN) - X(v)) - 0.5, rowH); });
+  });
+  g.strokeStyle = '#9aa7a6'; g.lineWidth = 1; g.fillStyle = '#5d6d71'; g.textAlign = 'center'; g.textBaseline = 'top';
+  for (let v = MAP_LO; v <= MAP_HI; v += 5) { g.beginPath(); g.moveTo(X(v), axisY - 3); g.lineTo(X(v), axisY + 1); g.stroke(); g.fillText(v, X(v), axisY + 3); }
+  g.textAlign = 'right'; g.fillText('km/h', W - R, axisY + 18);
+  const v = speedNow, y = lastDir > 0 ? y1 : y2;
+  g.fillStyle = '#1f2b2f'; g.beginPath(); g.moveTo(X(v) - 5, y - 4); g.lineTo(X(v) + 5, y - 4); g.lineTo(X(v), y + 3); g.fill();
+}
+const riderCol = id => `hsl(${(id * 137.5) % 360} 58% ${id % 2 ? 42 : 52}%)`;
+const WIN = 600;   // graph window: the last 10 minutes (one row per simulated second)
+function drawBraid() {
+  const [g, W, H] = sizeCanvas($('braid'));
+  g.clearRect(0, 0, W, H);
+  const rows = sim.rows.slice(-WIN), n = sim.n;
+  const L = 24, R = W - 8, T = 8, B = H - 34;
+  g.strokeStyle = '#eef1f0'; g.lineWidth = 1;
+  g.font = '11px system-ui'; g.fillStyle = '#5d6d71'; g.textAlign = 'right'; g.textBaseline = 'middle';
+  g.fillText('1', L - 5, T); g.fillText(n, L - 5, B);
+  if (rows.length < 2) return;
+  const X = i => L + (i + WIN - rows.length) / (WIN - 1) * (R - L);   // fills from the right: now is always at the right edge
+  for (const a of sim.riders) {
+    g.strokeStyle = riderCol(a.id); g.lineWidth = 0.9; g.beginPath();
+    rows.forEach((q, i) => { const r = q.ranks && q.ranks[a.id]; if (!r) return; const y = T + (r - 1) / (n - 1) * (B - T); i ? g.lineTo(X(i), y) : g.moveTo(X(i), y); });
+    g.stroke();
+  }
+  const ry = B + 8, cw = (R - L) / (WIN - 1);
+  rows.forEach((q, i) => { g.fillStyle = q.phase ? PH[q.phase][2] : '#eef1f0'; g.fillRect(X(i) - cw / 2, ry, cw + 0.5, 10); });
+  g.textAlign = 'left'; g.textBaseline = 'alphabetic'; g.fillStyle = '#5d6d71';
+  g.textAlign = 'center'; g.strokeStyle = '#c3ceca';
+  for (let m = 1; m <= 9; m++) { const x = L + (1 - m * 60 / (WIN - 1)) * (R - L); g.beginPath(); g.moveTo(x, ry + 10); g.lineTo(x, ry + 13); g.stroke(); g.fillText('-' + m, x, H - 2); }
+  g.textAlign = 'left'; g.fillText('10 min ago', L, H - 2); g.textAlign = 'right'; g.fillText('now', R, H - 2);
+}
+function drawPlane() {
+  const [g, W, H] = sizeCanvas($('plane'));
+  g.clearRect(0, 0, W, H);
+  const rows = sim.rows.filter(q => q.phase).slice(-WIN), REF = Peloton.REF;
+  const L = 32, R = W - 10, T = 8, B = H - 30;
+  const pmax = Math.max(1.2, ...rows.map(q => q.pcr)), cmax = Math.max(3.5, ...rows.map(q => q.cx));
+  const px = v => L + v / pmax * (R - L), py = v => B - (v - 1) / (cmax - 1) * (B - T);
+  g.fillStyle = '#fbefed'; g.fillRect(px(1), T, R - px(1), B - T);
+  g.strokeStyle = '#b9cbc8'; g.lineWidth = 1; g.setLineDash([4, 4]); g.beginPath();
+  for (const v of [REF.pcrLow, REF.pcrHigh, 1]) { g.moveTo(px(v), T); g.lineTo(px(v), B); }
+  for (const v of [REF.cxLow, REF.cxHigh]) { g.moveTo(L, py(v)); g.lineTo(R, py(v)); }
+  g.stroke(); g.setLineDash([]);
+  g.strokeStyle = '#8a9a99'; g.beginPath(); g.moveTo(L, T); g.lineTo(L, B); g.lineTo(R, B); g.stroke();
+  g.font = '11px system-ui'; g.fillStyle = '#5d6d71'; g.textAlign = 'center'; g.textBaseline = 'top';
+  for (let v = 0; v <= pmax + 1e-9; v += 0.4) g.fillText(v.toFixed(1), px(v), B + 3);
+  g.fillText('PCR (effort)', (L + R) / 2, B + 16);
+  g.textAlign = 'right'; g.textBaseline = 'middle';
+  for (let v = 1; v <= cmax; v++) g.fillText(v, L - 5, py(v));
+  g.save(); g.translate(9, (T + B) / 2); g.rotate(-Math.PI / 2); g.textAlign = 'center'; g.fillText('Cx* (mixing)', 0, 0); g.restore();
+  g.font = '600 10.5px system-ui'; g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+  const lab = (k, txt, x, y) => { g.fillStyle = PH[k][2]; g.fillText(txt, x, y); };
+  lab('Cs', 'static', px(0.03), py(1) - 4); lab('S', 'strung out', px(REF.pcrHigh) + 4, py(1) - 4);
+  lab('Ccl', 'convective', px(0.03), T + 11); lab('Dcp', 'breaking apart', Math.min(px(1) + 4, R - 70), T + 11);
+  if (!rows.length) return;
+  g.strokeStyle = '#d3dedb'; g.beginPath(); rows.forEach((q, i) => i ? g.lineTo(px(q.pcr), py(q.cx)) : g.moveTo(px(q.pcr), py(q.cx))); g.stroke();
+  rows.forEach((q, i) => { g.fillStyle = PH[q.phase][2]; g.globalAlpha = 0.3 + 0.7 * (i + 1) / rows.length; g.beginPath(); g.arc(px(q.pcr), py(q.cx), 2.6, 0, 7); g.fill(); });
+  g.globalAlpha = 1;
+  const q = rows[rows.length - 1]; g.strokeStyle = '#1f2b2f'; g.lineWidth = 2; g.beginPath(); g.arc(px(q.pcr), py(q.cx), 6, 0, 7); g.stroke();
+}
+function buildLegend() {
+  $('legend').innerHTML = ['Cs', 'Ccl', 'Cch', 'Da', 'S', 'Sf', 'Dd', 'Dcp', 'Transitional']
+    .map(k => `<span><i style="background:${PH[k][2]}"></i>${PH[k][0]}</span>`).join('');
+}
+
+function onSample() {
+  const v = speedNow;
+  if (Math.abs(v - prevV) > 0.02) lastDir = v > prevV ? 1 : -1;
+  prevV = v; log.push({ v, dir: lastDir });
+  const rows = sim.rows, row = rows[rows.length - 1];
+  for (; done < rows.length - 3; done++) {          // labels arrive 2 s late (5 s centred smoothing)
+    const e = log[done]; if (!e || !rows[done].phase) continue;
+    const i = Math.round((e.v - MAP_LO) / BIN); if (i >= 0 && i < map.up.length) map[e.dir > 0 ? 'up' : 'down'][i] = rows[done].phase;
+  }
+  let ph = null; for (let i = rows.length - 1; i >= 0; i--) if (rows[i].phase) { ph = rows[i].phase; break; }
+  if (row) { $('pcr').textContent = row.pcr.toFixed(2); $('pcrMark').style.left = (Math.min(1.2, Math.max(0, row.pcr)) / 1.2 * 100) + '%'; }
+  if (ph) { const p = PH[ph] || [ph, '', '#c9cfd1']; $('phase').textContent = p[0]; $('phaseText').textContent = p[1] + (row && row.groups > 1 ? ` (${row.groups} groups)` : ''); $('phaseSwatch').style.background = p[2]; }
+}
+
+function frame(now) {
+  const el = Math.min(0.1, (now - last) / 1000); last = now;
+  if (playing) {
+    acc += el * RATE;
+    while (acc >= DT) {
+      if (sweepOn) stepSweep();
+      for (const a of sim.riders) { a.px = a.x; a.py = a.y; }
+      sim.step(DT, cond());
+      frameX += speedNow / 3.6 * DT; nStep++;
+      if (nStep % Math.round(TRAIL_DT / DT) === 0) for (const a of sim.riders) { (a.trail ||= []).push(a.x - frameX, a.y); if (a.trail.length > 2 * TRAIL_N) a.trail.splice(0, 2); }
+      for (const a of sim.riders) a.effS = a.effS === undefined ? a.P / a.mso : a.effS + (a.P / a.mso - a.effS) * (DT / 1.5);
+      acc -= DT;
+      if (sim.t + 1e-8 >= sim.nextSample) { sim.sample(); sim.nextSample += 1; onSample(); }
+    }
+  }
+  drawRoad(); drawMap(); drawBraid(); drawPlane();
+  requestAnimationFrame(frame);
+}
+
+$('play').onclick = () => { playing = !playing; $('play').textContent = playing ? 'Pause' : 'Play'; if (playing && $('phase').textContent === 'Press Play') $('phase').textContent = 'Settling in…'; };
+$('reset').onclick = () => { reset(); setSweep(true); };
+$('sweep').onclick = () => { setSweep(!sweepOn); if (sweepOn) { sweepDir = speedNow >= V_HI ? -1 : 1; hold = 0; } };
+$('tracers').onclick = () => { tracersOn = !tracersOn; $('tracers').classList.toggle('on', tracersOn); $('tracers').setAttribute('aria-pressed', tracersOn); $('tracers').textContent = 'Tracers: ' + (tracersOn ? 'on' : 'off'); };
+$('riders').oninput = () => { $('ridersOut').textContent = $('riders').value; };
+$('riders').onchange = () => { N = +$('riders').value; reset(); setSweep(true); };   // a new field of riders starts a new race
+$('speed').oninput = () => { setSweep(false); speedNow = +$('speed').value; labels(); };
+buildLegend(); reset(); requestAnimationFrame(frame);
+}
+</script>
+</body>
+</html>
